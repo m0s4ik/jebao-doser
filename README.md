@@ -1,8 +1,9 @@
 # jebao-doser — local control for Jebao WiFi dosing pumps (no cloud)
 
 [![Test](https://github.com/m0s4ik/jebao-doser/actions/workflows/test.yml/badge.svg)](https://github.com/m0s4ik/jebao-doser/actions/workflows/test.yml)
-[![Release](https://img.shields.io/github/v/release/m0s4ik/jebao-doser)](https://github.com/m0s4ik/jebao-doser/releases)
-[![Python](https://img.shields.io/badge/python-3.10%2B-blue)](https://github.com/m0s4ik/jebao-doser)
+[![PyPI](https://img.shields.io/pypi/v/jebao-doser)](https://pypi.org/project/jebao-doser/)
+[![Downloads](https://img.shields.io/pypi/dm/jebao-doser)](https://pypi.org/project/jebao-doser/)
+[![Python](https://img.shields.io/pypi/pyversions/jebao-doser)](https://pypi.org/project/jebao-doser/)
 [![License: MIT](https://img.shields.io/github/license/m0s4ik/jebao-doser)](LICENSE)
 
 <p align="center"><img src="images/jebao-doser-3.4.jpg" alt="Jebao DOSER 3.4 WiFi 4-head aquarium dosing pump" width="560"><br><sub>Jebao DOSER 3.4 WiFi (product image © Jebao)</sub></p>
@@ -46,7 +47,7 @@ Jebao DOSER 3.4 WiFi at a glance:
 ## Install
 
 ```bash
-pip install git+https://github.com/m0s4ik/jebao-doser
+pip install jebao-doser
 ```
 
 ## Command line

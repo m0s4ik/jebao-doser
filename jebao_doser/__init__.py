@@ -8,4 +8,4 @@ __all__ = [
     "DataPoints", "DeviceInfo", "Dose", "Doser", "ProtocolError", "SchemaError",
     "discover", "dosing", "get_schema", "interval", "load_file", "schedule",
 ]
-__version__ = "0.1.0"
+__version__ = "0.1.1"
