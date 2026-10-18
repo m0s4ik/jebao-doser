@@ -20,5 +20,8 @@ Issues = "https://github.com/m0s4ik/jebao-doser/issues"
 [project.scripts]
 jebao-doser = "jebao_doser.cli:main"
 
+[tool.setuptools]
+packages = ["jebao_doser"]
+
 [tool.setuptools.package-data]
 jebao_doser = ["schemas/*.json"]
