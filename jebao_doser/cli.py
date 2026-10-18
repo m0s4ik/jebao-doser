@@ -27,7 +27,8 @@ def _summary(doser: Doser) -> str:
         plan = ", ".join(f"{d['time']} {d['amount']} ml" for d in doses) or "no schedule"
         every = interval(s, h)
         every = "" if not doses else (" every day" if (every or 0) <= 1 else f" every {every} days")
-        lines.append(f"head {h}: {'DOSING ' if dosing(s, h) else ''}{plan}{every}")
+        off = "" if s.get(f"Timer{h}ON") else " (schedule off)"
+        lines.append(f"head {h}: {'DOSING ' if dosing(s, h) else ''}{plan}{every}{off}")
     for alarm in ("OpenCircuit", "Fault_UART"):
         if s.get(alarm):
             lines.append(f"ALARM {alarm}")
@@ -74,6 +75,13 @@ async def _dose(args) -> None:
     print("stopped")
 
 
+async def _clear(args) -> None:
+    doser = Doser(args.host, cache_dir=CACHE)
+    for head in args.heads:
+        await doser.clear_schedule(head)
+        print(f"head {head}: schedule cleared and switched off")
+
+
 async def _discover(args) -> None:
     devices = await discover(args.timeout, args.target)
     for d in devices:
@@ -98,6 +106,9 @@ def main() -> None:
     s.add_argument("seconds", type=float, nargs="?", default=1.0)
     s.add_argument("--ml", type=float, help="dose this many ml instead (time based)")
     s.add_argument("--ml-per-minute", type=float, default=50.0)
+    s = sub.add_parser("clear-schedule", help="delete the pump's own schedule of some heads")
+    s.add_argument("host")
+    s.add_argument("heads", type=int, nargs="+")
     s = sub.add_parser("discover", help="find pumps on the LAN (UDP broadcast)")
     s.add_argument("--timeout", type=float, default=3)
     s.add_argument("--target", default="255.255.255.255", help="broadcast or device address")
@@ -109,7 +120,7 @@ def main() -> None:
         print(json.dumps(get_schema(args.product_key, CACHE).schema, ensure_ascii=False, indent=1))
         return
     try:
-        asyncio.run({"status": _status, "listen": _listen, "dose": _dose, "discover": _discover}[args.cmd](args))
+        asyncio.run({"status": _status, "listen": _listen, "dose": _dose, "clear-schedule": _clear, "discover": _discover}[args.cmd](args))
     except KeyboardInterrupt:
         pass
 

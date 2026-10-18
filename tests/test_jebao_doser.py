@@ -110,3 +110,16 @@ def test_encode_write_rejects_read_only():
     from jebao_doser import SchemaError
     with pytest.raises(SchemaError):
         DP.encode_write({"OpenCircuit": True})
+
+
+def test_clear_schedule_write():
+    flags, data = DP.encode_write({"CH2SWTime": bytes(96), "Timer2ON": False})
+    ids = {a["name"]: a["id"] for a in DP.writable}
+    assert int.from_bytes(flags, "big") == (1 << ids["CH2SWTime"]) | (1 << ids["Timer2ON"])
+    assert not any(data)
+
+
+def test_schedule_enabled():
+    from jebao_doser import schedule_enabled
+    s = DP.decode(status_bytes())
+    assert [h for h in range(1, 9) if schedule_enabled(s, h)] == [1, 2, 3, 5, 6]

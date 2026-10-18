@@ -40,6 +40,7 @@ Jebao DOSER 3.4 WiFi at a glance:
 - **Schedule** of every head: up to 24 doses per head, time and amount (ml), interval in days.
 - **Dose events** with start time and duration.
 - **Manual dosing**: run a head for a time or an amount (ml), with the stop always sent.
+- **Clear the pump's own schedule** of a head (and switch it off), e.g. when you schedule doses yourself.
 - **Alarms**: open circuit, Wi-Fi module fault.
 - **Discovery** of pumps on the LAN (UDP broadcast, like the vendor app).
 - **Any Gizwits product**: the pump reports its product key and the data point schema is downloaded once from the public Gizwits API and cached (the DOSER 3.4 schema is bundled).
@@ -60,6 +61,7 @@ jebao-doser listen 192.168.1.50      # stay connected and print every dose
 jebao-doser status 192.168.1.50 --json
 jebao-doser dose 192.168.1.50 4 3        # run head 4 for 3 seconds
 jebao-doser dose 192.168.1.50 2 --ml 2   # about 2 ml (time based, 50 ml/min)
+jebao-doser clear-schedule 192.168.1.50 2 3   # delete the pump's schedule of heads 2 and 3
 ```
 
 Example (`status`):
@@ -105,7 +107,7 @@ asyncio.run(main())
 
 This is a behaviour of the **pump firmware**, not of this library. When a dose runs from the pump's **own schedule** (the one set in the Jebao app), the pump sends **no message at all**: nothing on the LAN connection and nothing to the Gizwits cloud (verified with packet captures of both, Jebao DOSER 3.4, firmware 04X3000R). Manual doses (app, buttons on the pump, this library) are reported immediately.
 
-So if you need to **know** that every dose ran, do not rely on the pump's schedule: **schedule the doses yourself** with `Doser.dose()` / `dose_ml()` (from cron, a script or Home Assistant). The pump then confirms every dose. You can keep the pump's schedule as a backup, or clear it in the app to avoid double dosing. Watching the power draw of the pump's plug (about +2-3 W while a head runs) is another, less precise, way to see scheduled doses.
+So if you need to **know** that every dose ran, do not rely on the pump's schedule: **schedule the doses yourself** with `Doser.dose()` / `dose_ml()` (from cron, a script or Home Assistant). The pump then confirms every dose. Clear the pump's own schedule to avoid double dosing (`Doser.clear_schedule(head)` or `jebao-doser clear-schedule`), or keep it as a backup. Watching the power draw of the pump's plug (about +2-3 W while a head runs) is another, less precise, way to see scheduled doses.
 
 ## How it works
 
@@ -115,7 +117,7 @@ Packet: `00 00 00 03` + length (varint) + flag + command (2 bytes) + payload. Co
 
 ## Status
 
-Reading, dose events and manual dosing work. Writes change only the fields they name (one flag bit per data point, like the vendor app), so schedules are not touched. Note: the pump **does not report scheduled doses** (only manual ones, from the app, the buttons or this library); if you need to know they ran, watch the power draw of the pump's plug. Editing schedules is not exposed yet.
+Reading, dose events and manual dosing work. Writes change only the fields they name (one flag bit per data point, like the vendor app), so schedules are not touched. Note: the pump **does not report scheduled doses** (only manual ones, from the app, the buttons or this library); if you need to know they ran, watch the power draw of the pump's plug. Clearing a head's schedule is supported; editing schedules is not exposed yet.
 
 Tested with a Jebao DOSER 3.4 WiFi (4 heads, firmware 04X3000R). Reports for other models are welcome: open an issue with the output of `jebao-doser status <ip>`.
 

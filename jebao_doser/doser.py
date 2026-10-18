@@ -49,6 +49,11 @@ def interval(status: dict[str, Any], head: int) -> int | None:
     return status.get(f"IntervalT{head}")
 
 
+def schedule_enabled(status: dict[str, Any], head: int) -> bool:
+    """The pump's own schedule of a head is switched on (clock icon in the vendor app)."""
+    return bool(status.get(f"Timer{head}ON"))
+
+
 def dosing(status: dict[str, Any], head: int) -> bool:
     return bool(status.get(f"channe{head}"))
 
@@ -146,6 +151,24 @@ class Doser:
             await asyncio.sleep(seconds)
         finally:
             await asyncio.shield(self.write(**{f"channe{head}": False}))
+
+    async def clear_schedule(self, head: int) -> None:
+        """Delete every programmed dose of a head and switch its schedule off (the clock icon
+        in the vendor app), like deleting it in the app. Other heads and settings are untouched."""
+        n = len(self._schedule_bytes(head))
+        await self.write(**{f"CH{head}SWTime": bytes(n), f"Timer{head}ON": False})
+
+    async def set_schedule_enabled(self, head: int, enabled: bool) -> None:
+        """Switch the pump's own schedule of a head on or off without changing it."""
+        await self.write(**{f"Timer{head}ON": bool(enabled)})
+
+    def _schedule_bytes(self, head: int) -> bytes:
+        if self.schema is None:
+            return bytes(SCHEDULE_SLOTS * 4)
+        a = next((a for a in self.schema.writable if a["name"] == f"CH{head}SWTime"), None)
+        if a is None:
+            raise ValueError(f"head {head} has no schedule")
+        return bytes(a["position"]["len"])
 
     async def dose_ml(self, head: int, ml: float, ml_per_minute: float = 50.0) -> None:
         """Dose about ``ml`` millilitres (time based: calibrate ``ml_per_minute`` for accuracy)."""
