@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "jebao-doser"
-version = "0.1.1"
+version = "0.2.0"
 description = "Local control of Jebao WiFi aquarium dosing pumps (DOSER 3.4, 3.1, MD 4.4) over the LAN, no cloud: Python library and CLI"
 readme = "README.md"
 license = "MIT"

@@ -19,6 +19,7 @@ _LOGGER = logging.getLogger(__name__)
 PING_INTERVAL = 20
 SILENCE_LIMIT = 60
 SCHEDULE_SLOTS = 24
+MAX_DOSE_SECONDS = 120  # safety limit for one manual dose
 
 ERRORS = (OSError, asyncio.IncompleteReadError, asyncio.TimeoutError, ProtocolError, SchemaError)
 
@@ -117,6 +118,38 @@ class Doser:
             return self.status
         finally:
             session.close()
+
+    async def write(self, **values: Any) -> None:
+        """Change only these data points (e.g. ``channe4=True``). Uses the open connection if any."""
+        if self._session is not None and self.connected:
+            flags, data = self.schema.encode_write(values)
+            self._session.send_write(flags, data)
+            await self._session.writer.drain()
+            return
+        session = await Session.open(self.host, self.port)
+        try:
+            await self._prepare(session)
+            flags, data = self.schema.encode_write(values)
+            session.send_write(flags, data)
+            await session.writer.drain()
+            await asyncio.sleep(0.3)
+        finally:
+            session.close()
+
+    async def dose(self, head: int, seconds: float) -> None:
+        """Run a head for ``seconds`` (like holding its button). The stop is always sent,
+        also if the task is cancelled. Flow is about 50 ml/min per head on a DOSER 3.4."""
+        if not 0 < seconds <= MAX_DOSE_SECONDS:
+            raise ValueError(f"seconds must be between 0 and {MAX_DOSE_SECONDS}")
+        await self.write(**{f"channe{head}": True})
+        try:
+            await asyncio.sleep(seconds)
+        finally:
+            await asyncio.shield(self.write(**{f"channe{head}": False}))
+
+    async def dose_ml(self, head: int, ml: float, ml_per_minute: float = 50.0) -> None:
+        """Dose about ``ml`` millilitres (time based: calibrate ``ml_per_minute`` for accuracy)."""
+        await self.dose(head, ml * 60.0 / ml_per_minute)
 
     # ---- internals -------------------------------------------------------
 

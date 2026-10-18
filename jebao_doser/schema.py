@@ -66,6 +66,47 @@ class DataPoints:
         m = re.search(r"(\d+)\s*头", self.product_name or "")
         return int(m.group(1)) if m else None
 
+    @property
+    def write_length(self) -> int:
+        return max(a["position"]["byte_offset"] + self._byte_len(a) for a in self.writable)
+
+    def encode_write(self, values: dict[str, Any]) -> tuple[bytes, bytes]:
+        """Flags and data of a write (P0 action 0x01) that changes only ``values``.
+
+        Like the vendor app: one flag bit per writable data point (bit = attr id), and the
+        data block with only the flagged fields filled in. The device ignores the rest, so
+        schedules and other settings are left alone.
+        """
+        by_name = {a["name"]: a for a in self.writable}
+        flags = 0
+        data = bytearray(self.write_length)
+        for name, value in values.items():
+            a = by_name.get(name)
+            if a is None:
+                raise SchemaError(f"{name} is not writable")
+            flags |= 1 << a["id"]
+            pos = a["position"]
+            off = pos["byte_offset"]
+            if pos["unit"] == "bit":
+                if a["data_type"] == "enum" and not isinstance(value, int):
+                    value = (a.get("enum") or []).index(value)
+                size = self._groups[off]
+                word = int.from_bytes(data[off : off + size], "big")
+                mask = ((1 << pos["len"]) - 1) << pos["bit_offset"]
+                word = (word & ~mask) | ((int(value) << pos["bit_offset"]) & mask)
+                data[off : off + size] = word.to_bytes(size, "big")
+            elif a["data_type"].startswith("uint"):
+                spec = a.get("uint_spec") or {}
+                raw = round((value - spec.get("addition", 0)) / spec.get("ratio", 1))
+                data[off : off + pos["len"]] = int(raw).to_bytes(pos["len"], "big")
+            else:
+                raw = bytes(value)
+                if len(raw) != pos["len"]:
+                    raise SchemaError(f"{name} needs {pos['len']} bytes")
+                data[off : off + pos["len"]] = raw
+        n_flags = (max(a["id"] for a in self.writable) + 8) // 8
+        return flags.to_bytes(n_flags, "big"), bytes(data)
+
     def decode(self, data: bytes) -> dict[str, Any]:
         if len(data) < self.length:
             raise SchemaError(f"status too short: {len(data)} < {self.length} bytes")

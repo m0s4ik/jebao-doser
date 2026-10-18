@@ -8,7 +8,7 @@
 
 <p align="center"><img src="images/jebao-doser-3.4.jpg" alt="Jebao DOSER 3.4 WiFi 4-head aquarium dosing pump" width="560"><br><sub>Jebao DOSER 3.4 WiFi (product image © Jebao)</sub></p>
 
-Python library and command line tool to read and monitor **Jebao WiFi aquarium dosing pumps** (Jebao **DOSER 3.4**, and other Gizwits based Jebao dosers such as **DOSER 3.1**, **DOSER 3.2**, **MD 4.4**) directly over your **local network**. No Jebao/Gizwits cloud, no account, no app, no Home Assistant needed.
+Python library and command line tool to monitor and control **Jebao WiFi aquarium dosing pumps** (Jebao **DOSER 3.4**, and other Gizwits based Jebao dosers such as **DOSER 3.1**, **DOSER 3.2**, **MD 4.4**) directly over your **local network**. No Jebao/Gizwits cloud, no account, no app, no Home Assistant needed.
 
 Useful for reef and planted aquarium automation: know when every head doses, read the schedule (time and ml of each dose, interval in days), get alarms, and build your own scripts, dashboards or bots.
 
@@ -39,6 +39,7 @@ Jebao DOSER 3.4 WiFi at a glance:
 - **Local push**: one TCP connection, the pump reports every change by itself (scheduled doses, doses from the app, doses from the buttons on the pump). No polling.
 - **Schedule** of every head: up to 24 doses per head, time and amount (ml), interval in days.
 - **Dose events** with start time and duration.
+- **Manual dosing**: run a head for a time or an amount (ml), with the stop always sent.
 - **Alarms**: open circuit, Wi-Fi module fault.
 - **Discovery** of pumps on the LAN (UDP broadcast, like the vendor app).
 - **Any Gizwits product**: the pump reports its product key and the data point schema is downloaded once from the public Gizwits API and cached (the DOSER 3.4 schema is bundled).
@@ -57,6 +58,8 @@ jebao-doser discover                 # find pumps on the LAN
 jebao-doser status 192.168.1.50      # model, firmware and schedule of every head
 jebao-doser listen 192.168.1.50      # stay connected and print every dose
 jebao-doser status 192.168.1.50 --json
+jebao-doser dose 192.168.1.50 4 3        # run head 4 for 3 seconds
+jebao-doser dose 192.168.1.50 2 --ml 2   # about 2 ml (time based, 50 ml/min)
 ```
 
 Example (`status`):
@@ -88,6 +91,8 @@ async def main():
     status = await doser.read()                      # connect, read once, disconnect
     print(doser.schema.product_name, schedule(status, 2))
 
+    await doser.dose_ml(4, 2)                         # about 2 ml from head 4
+
     live = Doser("192.168.1.50", on_dose=print)      # stay connected, reconnect by itself
     live.start()
     await asyncio.sleep(3600)
@@ -104,7 +109,9 @@ Packet: `00 00 00 03` + length (varint) + flag + command (2 bytes) + payload. Co
 
 ## Status
 
-Read only for now. Writing (manual dose, editing schedules) works the same way, but a write sends every writable byte at once and a mistake wipes the schedules, so it is not exposed yet. Tested with a Jebao DOSER 3.4 WiFi (4 heads, firmware 04X3000R). Reports for other models are welcome: open an issue with the output of `jebao-doser status <ip>`.
+Reading, dose events and manual dosing work. Writes change only the fields they name (one flag bit per data point, like the vendor app), so schedules are not touched. Note: the pump **does not report scheduled doses** (only manual ones, from the app, the buttons or this library); if you need to know they ran, watch the power draw of the pump's plug. Editing schedules is not exposed yet.
+
+Tested with a Jebao DOSER 3.4 WiFi (4 heads, firmware 04X3000R). Reports for other models are welcome: open an issue with the output of `jebao-doser status <ip>`.
 
 ## Security
 

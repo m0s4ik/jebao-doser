@@ -1,4 +1,4 @@
-"""Command line: jebao-doser discover | status <ip> | listen <ip> | schema <product_key>."""
+"""Command line: jebao-doser discover | status <ip> | listen <ip> | dose <ip> <head> <seconds> | schema <product_key>."""
 
 from __future__ import annotations
 
@@ -66,6 +66,14 @@ async def _listen(args) -> None:
     await asyncio.Event().wait()
 
 
+async def _dose(args) -> None:
+    doser = Doser(args.host, cache_dir=CACHE)
+    seconds = args.seconds if args.ml is None else args.ml * 60 / args.ml_per_minute
+    print(f"head {args.head}: running for {seconds:.1f} s")
+    await doser.dose(args.head, seconds)
+    print("stopped")
+
+
 async def _discover(args) -> None:
     devices = await discover(args.timeout, args.target)
     for d in devices:
@@ -84,6 +92,12 @@ def main() -> None:
     s = sub.add_parser("listen", help="stay connected and print every dose")
     s.add_argument("host")
     s.add_argument("--json", action="store_true", help="also print every status as JSON")
+    s = sub.add_parser("dose", help="run one head for some seconds (or --ml)")
+    s.add_argument("host")
+    s.add_argument("head", type=int)
+    s.add_argument("seconds", type=float, nargs="?", default=1.0)
+    s.add_argument("--ml", type=float, help="dose this many ml instead (time based)")
+    s.add_argument("--ml-per-minute", type=float, default=50.0)
     s = sub.add_parser("discover", help="find pumps on the LAN (UDP broadcast)")
     s.add_argument("--timeout", type=float, default=3)
     s.add_argument("--target", default="255.255.255.255", help="broadcast or device address")
@@ -95,7 +109,7 @@ def main() -> None:
         print(json.dumps(get_schema(args.product_key, CACHE).schema, ensure_ascii=False, indent=1))
         return
     try:
-        asyncio.run({"status": _status, "listen": _listen, "discover": _discover}[args.cmd](args))
+        asyncio.run({"status": _status, "listen": _listen, "dose": _dose, "discover": _discover}[args.cmd](args))
     except KeyboardInterrupt:
         pass
 

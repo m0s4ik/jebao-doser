@@ -92,3 +92,21 @@ def test_dose_events():
     d._handle(DP.decode(status_bytes(bits=0x006E01 | 1 << 2)))
     d._handle(DP.decode(status_bytes()))
     assert len(doses) == 1 and doses[0].head == 2 and doses[0].duration >= 0
+
+
+def test_encode_write_like_the_app():
+    # what the vendor app sent to start head 4: flag bit 4, data all zero except that bit
+    flags, data = DP.encode_write({"channe4": True})
+    assert flags == bytes.fromhex("0000000010")
+    assert len(data) == 789 and data[:3] == bytes.fromhex("000010") and not any(data[3:])
+    flags, data = DP.encode_write({"channe4": False})
+    assert flags == bytes.fromhex("0000000010") and not any(data)
+    flags, data = DP.encode_write({"channe1": True})
+    assert flags == bytes.fromhex("0000000002") and data[:3] == bytes.fromhex("000002")
+
+
+def test_encode_write_rejects_read_only():
+    import pytest
+    from jebao_doser import SchemaError
+    with pytest.raises(SchemaError):
+        DP.encode_write({"OpenCircuit": True})
