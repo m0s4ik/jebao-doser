@@ -1,5 +1,10 @@
 # jebao-doser — local control for Jebao WiFi dosing pumps (no cloud)
 
+[![Test](https://github.com/m0s4ik/jebao-doser/actions/workflows/test.yml/badge.svg)](https://github.com/m0s4ik/jebao-doser/actions/workflows/test.yml)
+[![Release](https://img.shields.io/github/v/release/m0s4ik/jebao-doser)](https://github.com/m0s4ik/jebao-doser/releases)
+[![Python](https://img.shields.io/badge/python-3.10%2B-blue)](https://github.com/m0s4ik/jebao-doser)
+[![License: MIT](https://img.shields.io/github/license/m0s4ik/jebao-doser)](LICENSE)
+
 Python library and command line tool to read and monitor **Jebao WiFi aquarium dosing pumps** (Jebao **DOSER 3.4**, and other Gizwits based Jebao dosers such as **DOSER 3.1**, **DOSER 3.2**, **MD 4.4**) directly over your **local network**. No Jebao/Gizwits cloud, no account, no app, no Home Assistant needed.
 
 Useful for reef and planted aquarium automation: know when every head doses, read the schedule (time and ml of each dose, interval in days), get alarms, and build your own scripts, dashboards or bots.
