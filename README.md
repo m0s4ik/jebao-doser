@@ -101,6 +101,12 @@ async def main():
 asyncio.run(main())
 ```
 
+## ⚠️ Known limitation of the pump: scheduled doses are not reported
+
+This is a behaviour of the **pump firmware**, not of this library. When a dose runs from the pump's **own schedule** (the one set in the Jebao app), the pump sends **no message at all**: nothing on the LAN connection and nothing to the Gizwits cloud (verified with packet captures of both, Jebao DOSER 3.4, firmware 04X3000R). Manual doses (app, buttons on the pump, this library) are reported immediately.
+
+So if you need to **know** that every dose ran, do not rely on the pump's schedule: **schedule the doses yourself** with `Doser.dose()` / `dose_ml()` (from cron, a script or Home Assistant). The pump then confirms every dose. You can keep the pump's schedule as a backup, or clear it in the app to avoid double dosing. Watching the power draw of the pump's plug (about +2-3 W while a head runs) is another, less precise, way to see scheduled doses.
+
 ## How it works
 
 Jebao WiFi dosers use an ESP32 module running the **Gizwits** (机智云) IoT platform. Besides the cloud (MQTT), the module speaks the Gizwits **LAN protocol** on **TCP 12416** (and UDP 12414 for discovery). The pump hands out its local passcode on request, so the IP address is all that is needed to log in. Status and schedule are a fixed binary layout described by the product's public data point schema.
