@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "jebao-doser"
+version = "0.1.0"
+description = "Local control of Jebao WiFi aquarium dosing pumps (DOSER 3.4, 3.1, MD 4.4) over the LAN, no cloud: Python library and CLI"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.10"
+dependencies = []
+keywords = ["jebao", "doser", "dosing pump", "aquarium", "reef", "gizwits", "local control", "home assistant", "iot"]
+classifiers = ["Programming Language :: Python :: 3", "Topic :: Home Automation"]
+
+[project.urls]
+Homepage = "https://github.com/m0s4ik/jebao-doser"
+Issues = "https://github.com/m0s4ik/jebao-doser/issues"
+
+[project.scripts]
+jebao-doser = "jebao_doser.cli:main"
+
+[tool.setuptools.package-data]
+jebao_doser = ["schemas/*.json"]
